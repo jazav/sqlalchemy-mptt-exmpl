@@ -1,0 +1,6 @@
+# requiremnts.txt
+
+sqlalchemy
+sqlalchemy_mptt
+python-settings
+python-dotenv
