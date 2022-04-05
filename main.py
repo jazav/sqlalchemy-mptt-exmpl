@@ -45,7 +45,7 @@ if __name__ == '__main__':
         #   dbc.unlock()
 
         # MPTT will refresh every node for any CRUD operation
-        # In order to speed up set of CRUD operations we can switch refreshing process off and switch it on later
+        # In order to speed up CRUD operations we can switch refreshing process off and switch it on later
         dbc.switch_mptt(flag=OFF, tree_id=tree_id)
         try:
             # apply a bunch of CRUD
