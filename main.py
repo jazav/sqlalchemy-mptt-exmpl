@@ -30,23 +30,25 @@ if __name__ == '__main__':
         salt: str = uuid.uuid4().hex
         cat = dbc.add_category(name=f"root_{salt}", commit=True)
 
-        # You should pay your attention that this code is not thread-safe.
+        # If you use tree_id as an integer you should pay your attention that this code is not thread-safe.
         # It's not a problem, because it's not a real-life application.
         # But if you want to use this code in a real-life application,
         # you should use a database with a lock.
 
-        # dbc.lock_db() or something like that
+        # dbc.lock_db() or realise a something like that
         # try:
         tree_id = dbc.get_max_tree_id()
-        tree_id = tree_id + 1
-
-        root = dbc.add_category_node(category=cat, tree_id=tree_id)
-        # finally:
-        #   dbc.unlock()
 
         # MPTT will refresh every node for any CRUD operation
         # In order to speed up CRUD operations we can switch refreshing process off and switch it on later
+        # dbc.switch_mptt(flag=OFF, tree_id=tree_id)
         dbc.switch_mptt(flag=OFF, tree_id=tree_id)
+
+        root = dbc.add_category_node(category=cat, tree_id=tree_id)
+        tree_id = root.tree_id
+        # finally:
+        #   dbc.unlock() - free
+        node = None
         try:
             # apply a bunch of CRUD
             for i in range(count):
@@ -57,6 +59,14 @@ if __name__ == '__main__':
             dbc.switch_mptt(flag=ON, tree_id=tree_id)
 
         logger.info(f"all data has been written successfully")
+
+        # dbc.switch_mptt(flag=OFF, tree_id=tree_id)
+        # try:
+        #     cat0 = dbc.get_category(name=names[0])
+        #     dbc.update_node(node=node, category=cat0, parent=None)
+        #     logger.info(f"all data has been updated successfully")
+        # finally:
+        #     dbc.switch_mptt(flag=ON, tree_id=tree_id)
     finally:
         dbc.close_db()
         logger.info(f"data base is closed")

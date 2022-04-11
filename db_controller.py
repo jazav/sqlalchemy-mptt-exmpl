@@ -1,14 +1,15 @@
-from sqlalchemy import create_engine
+import time
+from typing import Union
+
+from sqlalchemy import create_engine, event, func
 from sqlalchemy.engine import Engine
 from sqlalchemy.engine.url import URL
 from sqlalchemy.pool import NullPool
 from models import DeclarativeBase, Category, CategoryTree
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy_mptt import mptt_sessionmaker
-from sqlalchemy_mptt import tree_manager
+from sqlalchemy_mptt import tree_manager, mptt_sessionmaker
 from guid_type import GUID
-from sqlalchemy import func
 import logging
 
 logger = logging.getLogger(__name__)
@@ -45,6 +46,7 @@ class DatabaseController:
     @staticmethod
     def create_session(engine):
         session: Session = mptt_sessionmaker(sessionmaker(bind=engine))()
+
         return session
 
     def clear_tables(self, session):
@@ -117,7 +119,7 @@ class DatabaseController:
         category: Category = session.query(Category).filter(Category.name == name).first()
         return category
 
-    def get_max_tree_id(self) -> int:
+    def get_max_tree_id(self) -> Union[int, GUID]:
         """
         Return the maximum of the currently stored tree IDs.
         This is not a thread-safe value, but we use it just for a label.
@@ -125,16 +127,22 @@ class DatabaseController:
         session: Session = self.sessions[0]
         if session is None:
             raise Exception("session is not created")
-        try:
-            max_id: int = session.query(func.max(CategoryTree.tree_id)).one()
-            if max_id[0] is None:
-                return 0
-            return max_id[0]
-        except SQLAlchemyError as err:
-            logger.exception(err)
-        return 0
+        if isinstance(CategoryTree.tree_id.type, int):
+            try:
+                max_id: int = session.query(func.max(CategoryTree.tree_id)).one()
+                if max_id[0] is None:
+                    return 0
+                else:
+                    tree_id = max_id[0] + 1
+                    return tree_id
+            except SQLAlchemyError as err:
+                logger.exception(err)
+            return 0
+        elif isinstance(CategoryTree.tree_id.type, GUID):
+            tree_id = GUID.build(time.monotonic())
+            return tree_id
 
-    def switch_mptt(self, flag: bool, tree_id: int):
+    def switch_mptt(self, flag: bool, tree_id: Union[int, GUID]):
         tree_manager.register_events(remove=flag)  # enabled MPTT events back
         if flag:
             logger.debug("MPTT is disabled")
@@ -145,7 +153,21 @@ class DatabaseController:
             CategoryTree.rebuild(session, tree_id)  # rebuild lft, rgt value automatically
             logger.debug("MPTT is enabled")
 
-    def add_category_node(self, category: Category, tree_id: int, parent: CategoryTree = None) -> CategoryTree:
+    def _commit_node(self, node: CategoryTree, session: Session):
+        if node is None:
+            return
+        session.add(node)
+        try:
+            session.commit()
+            logger.debug(
+                f'Item {node} has been stored in database successfully')
+        except SQLAlchemyError as err:
+            logger.debug(f'Failed to add {node} to category_tree. Error: {err=}, {type(err)=}')
+            session.rollback()
+            raise
+
+    def add_category_node(self, category: Category, tree_id: Union[int, GUID],
+                          parent: CategoryTree = None) -> CategoryTree:
         if category is None:
             raise Exception("can't add category, due to it's None ")
 
@@ -159,13 +181,27 @@ class DatabaseController:
             parent_id = parent.id
 
         node = CategoryTree(category_id=category.id, parent_id=parent_id, left=0, right=0, tree_id=tree_id)
-        session.add(node)
-        try:
-            session.commit()
-            logger.debug(
-                f'Item {category.name} is stored in category_tree with id: {node.id}')
-        except SQLAlchemyError as err:
-            logger.debug(f'Failed to add {category.name} to category_tree. Error: {err=}, {type(err)=}')
-            session.rollback()
-            raise
+
+        self._commit_node(node, session)
+        return node
+
+    def update_node(self, node: CategoryTree, category: Category, parent: CategoryTree = None) -> CategoryTree:
+        if node is None:
+            raise Exception("node mustn't be None")
+        if category is None:
+            raise Exception("can't add category, due to it's None")
+
+        session: Session = self.sessions[0]
+        if session is None:
+            raise Exception("session is not created")
+
+        node.category = category
+        node.parent = parent
+
+        if parent is None:
+            node.tree_id = self.get_max_tree_id()
+        else:
+            node.tree_id = parent.tree_id
+
+        self._commit_node(node, session)
         return node

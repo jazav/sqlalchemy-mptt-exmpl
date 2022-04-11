@@ -1,10 +1,10 @@
 import logging
 import datetime
-from sqlalchemy import Column, Boolean, ForeignKey, UniqueConstraint
+
+from sqlalchemy import Column, Boolean, ForeignKey, UniqueConstraint, BigInteger
 import sqlalchemy as sql
 from guid_type import GUID
 import uuid
-from sqlalchemy import func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy_mptt.mixins import BaseNestedSets
@@ -39,9 +39,12 @@ class CategoryTree(DeclarativeBase, BaseNestedSets):
 
     id = Column(GUID, primary_key=True, default=uuid.uuid4)
     category_id = Column(GUID, ForeignKey(add_schema_name("category.id")))
-    items = relationship("Category", backref='item')
+    # to support GUID tree_id we have to use tree_manager.GuidTreesManager from this project
+    # tree_id = Column(GUID, default=uuid.uuid4, nullable=False, index=True)
     created_at = Column(sql.types.DateTime(timezone=True), nullable=False, default=datetime.datetime.utcnow)
     updated_at = Column(sql.types.DateTime(timezone=True), nullable=False, default=datetime.datetime.utcnow)
+
+    items = relationship("Category", backref='item')
 
     @staticmethod
     def update_data(session, category: Category):
