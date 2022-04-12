@@ -25,7 +25,7 @@ class Category(DeclarativeBase):
     __table_args__ = TABLE_ARGS
 
     # id = Column(GUID, primary_key=True, default=uuid.uuid4)
-    id = Column(Integer().with_variant(PK_TYPE, dialect.name), Identity(start=1, cycle=True, cache=SEQ_CACHE_SIZE),
+    id = Column(BigInteger().with_variant(PK_TYPE, dialect.name), Identity(start=1, cycle=True, cache=SEQ_CACHE_SIZE),
                 primary_key=True)
     name = Column(sql.String(length=256), nullable=False, index=True, unique=True)
     created_at = Column(sql.types.DateTime(timezone=True), nullable=False, default=datetime.datetime.utcnow)
