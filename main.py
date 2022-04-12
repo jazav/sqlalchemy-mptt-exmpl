@@ -17,13 +17,14 @@ if __name__ == '__main__':
     logger.info(f"database is opened")
     try:
         names: list = []
+
         count: int = int(os.getenv("CATEGORY_COUNT", 5))
 
-        for i in range(count):
+        for i in range(1, count):
             salt: str = uuid.uuid4().hex
-            names.append(f"category_{i+1}_{salt}")
+            names.append(f"category_{i}_{salt}")
 
-        logger.debug(f"names: {names[0]}..{names[count - 1]}")
+        logger.debug(f"names: {names[0]}..{names[len(names)-1]}")
 
         dbc.add_categories(names)
 
@@ -51,10 +52,9 @@ if __name__ == '__main__':
         node = None
         try:
             # apply a bunch of CRUD
-            for i in range(count):
-                cat = dbc.get_category(name=names[i])
+            for i in range(1, count):
+                cat = dbc.get_category(name=names[i - 1])
                 node = dbc.add_category_node(tree_id=tree_id, category=cat, parent=root)
-                # print(node.items)
         finally:
             # switch MPTT refresh on
             dbc.switch_mptt(flag=ON, tree_id=tree_id)

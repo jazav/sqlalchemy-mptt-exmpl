@@ -24,7 +24,7 @@ db_file = os.getenv("SQLITE_FILE")
 
 dialect = None
 PK_TYPE = None
-SEQ_CACHE_SIZE: int = 200
+SEQ_CACHE_SIZE: int = 1
 
 if db_file:
     from sqlalchemy.dialects import sqlite

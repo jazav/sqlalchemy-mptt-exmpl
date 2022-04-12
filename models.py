@@ -30,7 +30,7 @@ class Category(DeclarativeBase):
     created_at = Column(sql.types.DateTime(timezone=True), nullable=False, default=datetime.datetime.utcnow)
 
     def __repr__(self):
-        return "<Category({})>".format(self.url)
+        return "<Category({})>".format(self.name)
 
 
 class CategoryTree(DeclarativeBase, BaseNestedSets):
@@ -38,7 +38,7 @@ class CategoryTree(DeclarativeBase, BaseNestedSets):
     __table_args__ = TABLE_ARGS
 
     # id = Column(PK_TYPE, primary_key=True, default=uuid.uuid4)
-    id = Column(PK_TYPE, Identity(start=42, cycle=False, cache=SEQ_CACHE_SIZE),
+    id = Column(PK_TYPE, Identity(start=1, cycle=False, cache=SEQ_CACHE_SIZE),
                 primary_key=True)
 
     # category_id = Column(PK_TYPE, ForeignKey(_get_table_key("category.id", DB_SCHEMA)))
