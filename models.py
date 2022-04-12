@@ -1,5 +1,6 @@
 import logging
 import datetime
+from typing import Union
 
 from sqlalchemy import Column, ForeignKey, BigInteger, Identity, Integer
 import sqlalchemy as sql
@@ -18,11 +19,11 @@ logger = logging.getLogger(__name__)
 DeclarativeBase = declarative_base()
 
 
-def pk_column_maker(field_type=PK_TYPE):
-    if field_type is not GUID:
-        return Column(PK_TYPE, Identity(start=1, cycle=False, cache=SEQ_CACHE_SIZE), primary_key=True)
-    else:
+def pk_column_maker(field_type: Union[GUID, BigInteger] = PK_TYPE) -> Column:
+    if field_type is GUID:
         return Column(PK_TYPE, primary_key=True, default=uuid.uuid4)
+    else:
+        return Column(PK_TYPE, Identity(start=1, cycle=False, cache=SEQ_CACHE_SIZE), primary_key=True)
 
 
 # What is the best type for PK? Read this
