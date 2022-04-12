@@ -14,7 +14,7 @@ if __name__ == '__main__':
 
     dbc = DatabaseController(app_settings)
     dbc.open_db()
-    logger.info(f"data base is opened")
+    logger.info(f"database is opened")
     try:
         names: list = []
         count: int = int(os.getenv("CATEGORY_COUNT", 5))
@@ -54,6 +54,7 @@ if __name__ == '__main__':
             for i in range(count):
                 cat = dbc.get_category(name=names[i])
                 node = dbc.add_category_node(tree_id=tree_id, category=cat, parent=root)
+                # print(node.items)
         finally:
             # switch MPTT refresh on
             dbc.switch_mptt(flag=ON, tree_id=tree_id)
@@ -69,6 +70,6 @@ if __name__ == '__main__':
         #     dbc.switch_mptt(flag=ON, tree_id=tree_id)
     finally:
         dbc.close_db()
-        logger.info(f"data base is closed")
+        logger.info(f"database is closed")
 
     logger.info(f"elapsed time: {time.monotonic() - start_time}")

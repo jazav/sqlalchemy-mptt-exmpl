@@ -1,7 +1,7 @@
 import logging
 import datetime
 
-from sqlalchemy import Column, Boolean, ForeignKey, UniqueConstraint, BigInteger
+from sqlalchemy import Column, ForeignKey, BigInteger, Identity, Integer
 import sqlalchemy as sql
 from guid_type import GUID
 import uuid
@@ -9,24 +9,24 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy_mptt.mixins import BaseNestedSets
 from settings import TABLE_ARGS, DB_SCHEMA
+from sqlalchemy.schema import _get_table_key
+from settings import dialect, PK_TYPE, SEQ_CACHE_SIZE
 
 logger = logging.getLogger(__name__)
 
 DeclarativeBase = declarative_base()
 
 
-def add_schema_name(table_name):
-    if DB_SCHEMA == '':
-        return table_name
-    else:
-        return DB_SCHEMA + '.' + table_name
-
+# What is the best type for PK? Read this
+# https://www.cybertec-postgresql.com/en/uuid-serial-or-identity-columns-for-postgresql-auto-generated-primary-keys/
 
 class Category(DeclarativeBase):
     __tablename__ = "category"
     __table_args__ = TABLE_ARGS
 
-    id = Column(GUID, primary_key=True, default=uuid.uuid4)
+    # id = Column(GUID, primary_key=True, default=uuid.uuid4)
+    id = Column(Integer().with_variant(PK_TYPE, dialect.name), Identity(start=1, cycle=True, cache=SEQ_CACHE_SIZE),
+                primary_key=True)
     name = Column(sql.String(length=256), nullable=False, index=True, unique=True)
     created_at = Column(sql.types.DateTime(timezone=True), nullable=False, default=datetime.datetime.utcnow)
 
@@ -36,11 +36,19 @@ class Category(DeclarativeBase):
 
 class CategoryTree(DeclarativeBase, BaseNestedSets):
     __tablename__ = "category_tree"
+    __table_args__ = TABLE_ARGS
 
-    id = Column(GUID, primary_key=True, default=uuid.uuid4)
-    category_id = Column(GUID, ForeignKey(add_schema_name("category.id")))
-    # to support GUID tree_id we have to use tree_manager.GuidTreesManager from this project
+    # id = Column(GUID, primary_key=True, default=uuid.uuid4)
+    id = Column(BigInteger().with_variant(PK_TYPE, dialect.name), Identity(start=42, cycle=True, cache=SEQ_CACHE_SIZE),
+                primary_key=True)
+
+    # category_id = Column(GUID, ForeignKey(_get_table_key("category.id", DB_SCHEMA)))
+    category_id = Column(sql.Integer, ForeignKey(_get_table_key("category.id", DB_SCHEMA)))
+    parent_id = Column(sql.BigInteger, ForeignKey(_get_table_key("category_tree.id", DB_SCHEMA)), nullable=True)
+
+    # Attention! To support GUID tree_id we have to use tree_manager.GuidTreesManager from this project
     # tree_id = Column(GUID, default=uuid.uuid4, nullable=False, index=True)
+
     created_at = Column(sql.types.DateTime(timezone=True), nullable=False, default=datetime.datetime.utcnow)
     updated_at = Column(sql.types.DateTime(timezone=True), nullable=False, default=datetime.datetime.utcnow)
 

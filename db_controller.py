@@ -1,7 +1,7 @@
 import time
 from typing import Union
 
-from sqlalchemy import create_engine, event, func
+from sqlalchemy import create_engine, func
 from sqlalchemy.engine import Engine
 from sqlalchemy.engine.url import URL
 from sqlalchemy.pool import NullPool
@@ -51,8 +51,8 @@ class DatabaseController:
 
     def clear_tables(self, session):
         if self.clear_db:
-            session.query(Category).delete(synchronize_session=False)
             session.query(CategoryTree).delete(synchronize_session=False)
+            session.query(Category).delete(synchronize_session=False)
 
     def open_db(self):
         engine: Engine = self.create_engine()
@@ -119,7 +119,7 @@ class DatabaseController:
         category: Category = session.query(Category).filter(Category.name == name).first()
         return category
 
-    def get_max_tree_id(self) -> Union[int, GUID]:
+    def get_max_tree_id(self):
         """
         Return the maximum of the currently stored tree IDs.
         This is not a thread-safe value, but we use it just for a label.
@@ -127,7 +127,11 @@ class DatabaseController:
         session: Session = self.sessions[0]
         if session is None:
             raise Exception("session is not created")
-        if isinstance(CategoryTree.tree_id.type, int):
+
+        if isinstance(CategoryTree.tree_id.type, GUID):
+            tree_id = GUID.build(time.monotonic())
+            return tree_id
+        else:
             try:
                 max_id: int = session.query(func.max(CategoryTree.tree_id)).one()
                 if max_id[0] is None:
@@ -138,9 +142,6 @@ class DatabaseController:
             except SQLAlchemyError as err:
                 logger.exception(err)
             return 0
-        elif isinstance(CategoryTree.tree_id.type, GUID):
-            tree_id = GUID.build(time.monotonic())
-            return tree_id
 
     def switch_mptt(self, flag: bool, tree_id: Union[int, GUID]):
         tree_manager.register_events(remove=flag)  # enabled MPTT events back
