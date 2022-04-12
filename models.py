@@ -42,8 +42,8 @@ class CategoryTree(DeclarativeBase, BaseNestedSets):
                 primary_key=True)
 
     # category_id = Column(PK_TYPE, ForeignKey(_get_table_key("category.id", DB_SCHEMA)))
-    category_id = Column(sql.Integer, ForeignKey(_get_table_key("category.id", DB_SCHEMA)))
-    parent_id = Column(sql.BigInteger, ForeignKey(_get_table_key("category_tree.id", DB_SCHEMA)), nullable=True)
+    category_id = Column(PK_TYPE, ForeignKey(_get_table_key("category.id", DB_SCHEMA)))
+    parent_id = Column(PK_TYPE, ForeignKey(_get_table_key("category_tree.id", DB_SCHEMA)), nullable=True)
 
     # Attention! To support GUID tree_id we have to use tree_manager.GuidTreesManager from this project
     # tree_id = Column(PK_TYPE, default=uuid.uuid4, nullable=False, index=True)
