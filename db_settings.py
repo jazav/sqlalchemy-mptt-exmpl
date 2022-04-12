@@ -3,6 +3,8 @@ import os
 from distutils.util import strtobool
 import logging
 from pathlib import Path
+from sqlalchemy import BigInteger
+from guid_type import GUID
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +30,8 @@ if db_file:
     from sqlalchemy.dialects import sqlite
 
     dialect = sqlite.dialect()
-    PK_TYPE = sqlite.INTEGER
+    # PK_TYPE = GUID
+    PK_TYPE = BigInteger().with_variant(sqlite.INTEGER, dialect.name)
 
     DATABASE: dict[str, str] = {
         'drivername': 'sqlite',
@@ -39,7 +42,8 @@ else:
     from sqlalchemy.dialects import postgresql
 
     dialect = postgresql.dialect()
-    PK_TYPE = postgresql.BIGINT
+    # PK_TYPE = GUID
+    PK_TYPE = BigInteger().with_variant(postgresql.BIGINT, dialect.name)
 
     DB_SCHEMA = os.getenv("POSTGRES_SCHEMA", None)
     if DB_SCHEMA == "":
