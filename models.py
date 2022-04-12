@@ -21,9 +21,9 @@ DeclarativeBase = declarative_base()
 
 def pk_column_maker(field_type: Union[GUID, BigInteger] = PK_TYPE) -> Column:
     if field_type is GUID:
-        return Column(PK_TYPE, primary_key=True, default=uuid.uuid4)
+        return Column(field_type, primary_key=True, default=uuid.uuid4)
     else:
-        return Column(PK_TYPE, Identity(start=1, cycle=False, cache=SEQ_CACHE_SIZE), primary_key=True)
+        return Column(field_type, Identity(start=1, cycle=False, cache=SEQ_CACHE_SIZE), primary_key=True)
 
 
 # What is the best type for PK? Read this
