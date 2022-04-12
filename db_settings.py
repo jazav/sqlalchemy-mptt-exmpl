@@ -3,7 +3,8 @@ import os
 from distutils.util import strtobool
 import logging
 from pathlib import Path
-from sqlalchemy import BigInteger
+from sqlalchemy import BigInteger, Column, Identity
+
 from guid_type import GUID
 
 logger = logging.getLogger(__name__)
@@ -17,20 +18,18 @@ def _get_db_password(key, default):
 
 
 # clear tables before append new data
-CLEAR_DB_BEFORE_START = bool(strtobool(os.getenv("CLEAR_DB_BEFORE_START", 'False')))
+CLEAR_DB_BEFORE_START = bool(strtobool(os.getenv("CLEAR_DB_BEFORE_START", "False")))
 TABLE_ARGS = None
-
-db_file = os.getenv("SQLITE_FILE")
-
 dialect = None
-PK_TYPE = None
+PK_TYPE = GUID
 SEQ_CACHE_SIZE: int = 1
 
+db_file = os.getenv("SQLITE_FILE")
 if db_file:
     from sqlalchemy.dialects import sqlite
 
     dialect = sqlite.dialect()
-    # PK_TYPE = GUID
+    # Comment this if you want to use GUID as primary key
     PK_TYPE = BigInteger().with_variant(sqlite.INTEGER, dialect.name)
 
     DATABASE: dict[str, str] = {
@@ -42,7 +41,7 @@ else:
     from sqlalchemy.dialects import postgresql
 
     dialect = postgresql.dialect()
-    # PK_TYPE = GUID
+    # Comment this if you want to use GUID as primary key
     PK_TYPE = BigInteger().with_variant(postgresql.BIGINT, dialect.name)
 
     DB_SCHEMA = os.getenv("POSTGRES_SCHEMA", None)

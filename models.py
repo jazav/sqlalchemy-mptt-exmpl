@@ -7,13 +7,22 @@ import uuid
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy_mptt.mixins import BaseNestedSets
+
+from guid_type import GUID
 from settings import TABLE_ARGS, DB_SCHEMA
-from sqlalchemy.schema import _get_table_key
+from sqlalchemy.schema import _get_table_key as get_table_key
 from settings import PK_TYPE, SEQ_CACHE_SIZE
 
 logger = logging.getLogger(__name__)
 
 DeclarativeBase = declarative_base()
+
+
+def pk_column_maker(field_type=PK_TYPE):
+    if field_type is not GUID:
+        return Column(PK_TYPE, Identity(start=1, cycle=False, cache=SEQ_CACHE_SIZE), primary_key=True)
+    else:
+        return Column(PK_TYPE, primary_key=True, default=uuid.uuid4)
 
 
 # What is the best type for PK? Read this
@@ -23,9 +32,7 @@ class Category(DeclarativeBase):
     __tablename__ = "category"
     __table_args__ = TABLE_ARGS
 
-    # id = Column(PK_TYPE, primary_key=True, default=uuid.uuid4)
-    id = Column(PK_TYPE, Identity(start=1, cycle=False, cache=SEQ_CACHE_SIZE),
-                primary_key=True)
+    id = pk_column_maker()
     name = Column(sql.String(length=256), nullable=False, index=True, unique=True)
     created_at = Column(sql.types.DateTime(timezone=True), nullable=False, default=datetime.datetime.utcnow)
 
@@ -37,13 +44,9 @@ class CategoryTree(DeclarativeBase, BaseNestedSets):
     __tablename__ = "category_tree"
     __table_args__ = TABLE_ARGS
 
-    # id = Column(PK_TYPE, primary_key=True, default=uuid.uuid4)
-    id = Column(PK_TYPE, Identity(start=1, cycle=False, cache=SEQ_CACHE_SIZE),
-                primary_key=True)
-
-    # category_id = Column(PK_TYPE, ForeignKey(_get_table_key("category.id", DB_SCHEMA)))
-    category_id = Column(PK_TYPE, ForeignKey(_get_table_key("category.id", DB_SCHEMA)))
-    parent_id = Column(PK_TYPE, ForeignKey(_get_table_key("category_tree.id", DB_SCHEMA)), nullable=True)
+    id = pk_column_maker()
+    category_id = Column(PK_TYPE, ForeignKey(get_table_key("category.id", DB_SCHEMA)))
+    parent_id = Column(PK_TYPE, ForeignKey(get_table_key("category_tree.id", DB_SCHEMA)), nullable=True)
 
     # Attention! To support GUID tree_id we have to use tree_manager.GuidTreesManager from this project
     # tree_id = Column(PK_TYPE, default=uuid.uuid4, nullable=False, index=True)
