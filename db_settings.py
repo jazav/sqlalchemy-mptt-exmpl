@@ -24,6 +24,8 @@ dialect = None
 PK_TYPE = GUID
 SEQ_CACHE_SIZE: int = 1
 
+TABLE_PREFIX = os.getenv("TABLE_PREFIX", None)
+
 db_file = os.getenv("SQLITE_FILE")
 if db_file:
     from sqlalchemy.dialects import sqlite
