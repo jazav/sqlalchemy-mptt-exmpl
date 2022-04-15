@@ -15,18 +15,6 @@ from settings import PK_TYPE, SEQ_CACHE_SIZE
 logger = logging.getLogger(__name__)
 
 
-class PrefixerMeta(DeclarativeMeta):
-
-    def __init__(cls, name, bases, dict_):
-        if '__tablename__' in dict_ and TABLE_PREFIX is not None and TABLE_PREFIX != '':
-            cls.__tablename__ = dict_['__tablename__'] = f"{TABLE_PREFIX}_{dict_['__tablename__']}"
-
-        super().__init__(name, bases, dict_)
-
-
-DeclarativeBase = declarative_base(metaclass=PrefixerMeta)
-
-
 def is_valid(value: str, *exceptions) -> bool:
     """Check if value is not empty and not in exceptions list"""
     res = value not in (None, '') and len(value.strip()) > 0 and value not in exceptions
@@ -49,6 +37,18 @@ def pk_column_maker(column_type: Union[GUID, BigInteger] = PK_TYPE) -> Column:
         return Column(column_type, primary_key=True, default=uuid.uuid4)
     else:
         return Column(column_type, Identity(start=1, cycle=False, cache=SEQ_CACHE_SIZE), primary_key=True)
+
+
+class PrefixerMeta(DeclarativeMeta):
+
+    def __init__(cls, name, bases, dict_):
+        if '__tablename__' in dict_ and is_valid(TABLE_PREFIX):
+            cls.__tablename__ = dict_['__tablename__'] = f"{TABLE_PREFIX}_{dict_['__tablename__']}"
+
+        super().__init__(name, bases, dict_)
+
+
+DeclarativeBase = declarative_base(metaclass=PrefixerMeta)
 
 
 # What is the best type for PK? Read this
