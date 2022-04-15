@@ -32,6 +32,7 @@ def is_valid(value: str, *exceptions) -> bool:
     res = value not in (None, '') and len(value.strip()) > 0 and value not in exceptions
     return res
 
+
 def get_table_key(name: str, prefix: str = TABLE_PREFIX, schema: str = DB_SCHEMA) -> str:
     # Firstly, add prefix to table name
     if is_valid(prefix):
