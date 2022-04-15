@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class PrefixerMeta(DeclarativeMeta):
 
     def __init__(cls, name, bases, dict_):
-        if '__tablename__' in dict_ and TABLE_PREFIX is not None:
+        if '__tablename__' in dict_ and TABLE_PREFIX is not None and TABLE_PREFIX != '':
             cls.__tablename__ = dict_['__tablename__'] = f"{TABLE_PREFIX}_{dict_['__tablename__']}"
 
         super().__init__(name, bases, dict_)
@@ -27,12 +27,17 @@ class PrefixerMeta(DeclarativeMeta):
 DeclarativeBase = declarative_base(metaclass=PrefixerMeta)
 
 
+def is_valid(value: str, *exceptions) -> bool:
+    """Check if value is not empty and not in exceptions list"""
+    res = value not in (None, '') and len(value.strip()) > 0 and value not in exceptions
+    return res
+
 def get_table_key(name: str, prefix: str = TABLE_PREFIX, schema: str = DB_SCHEMA) -> str:
     # Firstly, add prefix to table name
-    if prefix is not None:
+    if is_valid(prefix):
         name = f"{prefix}_{name}"
     # Secondly, add schema to table name with prefix
-    if schema is not None:
+    if is_valid(schema, "public"):
         name = f"{schema}.{name}"
 
     return name

@@ -60,7 +60,7 @@ else:
     if password:
         password_file = os.getenv("DBUSER_PASSWORD_FILE")
         if password_file:
-            logger.warning(
+            logger.info(
                 f"*** DBUSER_PASSWORD_FILE is ignored, DBUSER_PASSWORD is used to define database password ***")
     else:
         password: str = _get_db_password(key="DBUSER_PASSWORD_FILE", default='')
